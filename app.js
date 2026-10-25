@@ -26,7 +26,8 @@ function validateWorkspace(raw){
 }
 function initial(list){const id=uid();return {boards:[{id,name:'我的看板',columns:defaults.map(c=>({...c})),tagOptions:[],projectOptions:[],tasks:list}],activeBoardId:id};}
 let workspace,storageAvailable=true,loadFailed=false;
-try{const raw=localStorage.getItem(KEY);const old=localStorage.getItem(LEGACY_KEY);workspace=raw!==null?validateWorkspace(JSON.parse(raw)):initial(old===null?samples():validate(JSON.parse(old)));}catch(e){workspace=initial([]);storageAvailable=false;loadFailed=true;}
+let suiteHadData=false;
+try{const raw=localStorage.getItem(KEY);const old=localStorage.getItem(LEGACY_KEY);suiteHadData=raw!==null||old!==null;workspace=raw!==null?validateWorkspace(JSON.parse(raw)):initial(old===null?samples():validate(JSON.parse(old)));}catch(e){workspace=initial([]);storageAvailable=false;loadFailed=true;}
 let activeBoard=workspace.boards.find(b=>b.id===workspace.activeBoardId),tasks=activeBoard.tasks,columns=activeBoard.columns;
 function useBoard(id){closeSearch();$('board-settings').open=false;workspace.activeBoardId=id;activeBoard=workspace.boards.find(b=>b.id===id);tasks=activeBoard.tasks;columns=activeBoard.columns;$('search').value='';$('project-filter').value='';$('tag-filter').value='';$('toast').hidden=true;undoAction=null;persist();}
 function matchesTask(task,{query='',project='',tag=''}={}){
@@ -37,7 +38,7 @@ function matchesTask(task,{query='',project='',tag=''}={}){
 }
 let editing=null,dragged=null,undoAction=null,timer,draftTags=[],draftColumns=[],draftProject='';
 function toast(message,undo){clearTimeout(timer);$('toast-text').textContent=message;undoAction=undo||null;$('undo').hidden=!undo;$('toast').hidden=false;timer=setTimeout(()=>{$('toast').hidden=true;undoAction=null;},12000);}
-function persist(){try{activeBoard.tasks=tasks;localStorage.setItem(KEY,JSON.stringify(workspace));storageAvailable=true;$('saved').textContent='● 已保存在本机';}catch(e){storageAvailable=false;$('saved').textContent='○ 尚未保存';toast('本机保存失败，请导出备份，避免丢失。');}render();}
+function persist(){try{activeBoard.tasks=tasks;localStorage.setItem(KEY,JSON.stringify(workspace));storageAvailable=true;$('saved').textContent='● 已保存在本机';window.dispatchEvent(new Event('liubai-workspace-change'));}catch(e){storageAvailable=false;$('saved').textContent='○ 尚未保存';toast('本机保存失败，请导出备份，避免丢失。');}render();}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
 function reorderItems(list,id,status,beforeId=null){
  const from=list.findIndex(t=>t.id===id);if(from<0||beforeId===id)return false;
@@ -97,6 +98,22 @@ for(const [id,direction] of [['group-left',-1],['group-right',1]])$(id).onclick=
 $('group-delete').onclick=()=>{const col=columns.find(c=>c.id===groupEditing);const target=columns.find(c=>c.id!==groupEditing);if(!target)return;const items=tasks.filter(t=>t.status===col.id);if(!confirm(`删除「${col.label}」分组？${items.length?`其中 ${items.length} 件事项将移到「${target.label}」。`:''}`))return;const previous=columns.map(c=>({...c}));items.forEach(t=>t.status=target.id);columns=columns.filter(c=>c.id!==col.id);activeBoard.columns=columns;persist();$('group-editor').close();toast('分组已删除',()=>{columns=previous;activeBoard.columns=columns;items.forEach(t=>t.status=col.id);persist();});};
 render();
 if(loadFailed){$('saved').textContent='○ 本机数据读取失败';toast('本机数据读取失败，原数据尚未覆盖。请先检查或导出备份。');}else if(storageAvailable)persist();
+window.liubaiSuiteAdapter={
+ read:()=>JSON.parse(JSON.stringify({...workspace,boards:workspace.boards.map(b=>({...b,tasks:b.tasks.filter(t=>!t.sample)}))})),
+ seed:()=>suiteHadData?JSON.parse(JSON.stringify({...workspace,boards:workspace.boards.filter(b=>!b.tasks.length||!b.tasks.every(t=>t.sample)).map(b=>({...b,tasks:b.tasks.filter(t=>!t.sample)}))})):{boards:[],activeBoardId:''},
+ apply(next){
+  const selected=workspace.activeBoardId;
+  const validated=validateWorkspace(next);
+  if(validated.boards.some(b=>b.id===selected))validated.activeBoardId=selected;
+  localStorage.setItem(KEY,JSON.stringify(validated));
+  workspace=validated;activeBoard=workspace.boards.find(b=>b.id===workspace.activeBoardId);tasks=activeBoard.tasks;columns=activeBoard.columns;
+  render();
+ },
+ busy:()=>Boolean(dragged||document.querySelector('dialog[open]')),
+ subscribe:listener=>window.addEventListener('liubai-workspace-change',listener),
+ status:message=>{$('saved').textContent='● '+message;}
+};
+window.dispatchEvent(new Event('liubai-suite-adapter-ready'));
 
 function renderTheme(){const dark=document.documentElement.dataset.theme==='dark';$('theme-toggle').textContent=dark?'☀ 浅色':'☾ 暗黑';$('theme-toggle').setAttribute('aria-label',dark?'切换到浅色模式':'切换到暗黑模式');document.querySelector('meta[name="theme-color"]').content=dark?'#191919':'#f7f8f5';}
 $('theme-toggle').onclick=()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;try{localStorage.setItem('liubai-theme',next);}catch(e){}renderTheme();};
