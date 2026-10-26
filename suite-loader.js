@@ -1,3 +1,14 @@
+function placeSyncControls(){
+  const controls=document.querySelector('.todo-suite-controls');
+  const menu=document.querySelector('#board-settings > .menu');
+  if(!controls||!menu||menu.contains(controls))return;
+  controls.open=false;
+  menu.append(controls);
+}
+// The shared sync module creates its controls asynchronously.
+const syncControlsObserver=new MutationObserver(placeSyncControls);
+syncControlsObserver.observe(document.body,{childList:true});
+placeSyncControls();
 const start = async () => {
   if (!window.liubaiSuiteAdapter || window.liubaiSuiteStarted) return;
   window.liubaiSuiteStarted = true;
@@ -11,3 +22,4 @@ const start = async () => {
 };
 window.addEventListener('liubai-suite-adapter-ready', start);
 start();
+

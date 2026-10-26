@@ -71,3 +71,9 @@ html,body{height:100%;height:100dvh;overflow:hidden}body{display:flex;flex-direc
 
 /* Keep the top row clear; board names remain in the tabs. */
 .topbar{grid-template-columns:minmax(0,1fr) auto}.top-actions{grid-column:2;grid-row:1}@media(max-width:760px){.topbar{grid-template-columns:minmax(0,1fr) auto}}
+
+/* Data status is available inside Settings only. */
+.top-actions .app-settings .menu .saved{display:block;font-size:11px;line-height:1.6;white-space:normal}.settings-data-status{padding:8px 12px 10px;margin-bottom:3px;border-bottom:1px solid var(--border)}
+
+/* Keep the shared sync controls inside Settings without changing their behavior. */
+.app-settings .menu .todo-suite-controls{margin:4px 6px 6px;padding-top:4px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);white-space:normal}.app-settings .menu .todo-suite-controls>summary{font-size:12px;letter-spacing:0;padding:8px 6px;line-height:1.5;list-style:disclosure-closed}.app-settings .menu .todo-suite-controls[open]>summary{list-style:disclosure-open}.app-settings .menu:has(.todo-suite-controls[open]){width:min(310px,calc(100vw - 28px))}.app-settings .menu .todo-suite-controls p{font-size:10px;line-height:1.7;margin:6px}.app-settings .menu .todo-suite-controls form{display:flex;flex-direction:column;gap:6px;padding:0 6px}.app-settings .menu .todo-suite-controls input{width:100%;min-width:0;padding:7px;font-size:13px}.app-settings .menu .todo-suite-controls button{padding:7px;font-size:11px;text-align:center}
