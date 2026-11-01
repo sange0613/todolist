@@ -195,3 +195,8 @@ function restoreRecycled(trashId,id){
 }
 function renderRecycleBin(){const list=$('recycle-list');list.replaceChildren();let count=0;for(const board of workspace.boards.filter(isTrashBoard)){for(const task of board.tasks){count++;const row=el('div','recycle-row');const content=el('div','recycle-content');content.append(el('strong','',task.title),el('small','',board.name+' · '+(task.project||'未设置项目')));const restore=el('button','secondary','恢复');restore.type='button';restore.onclick=()=>restoreRecycled(board.id,task.id);row.append(content,restore);list.append(row);}}if(!count)list.append(el('p','manager-empty','回收站是空的'));$('recycle-count').textContent=count+' 件事项';}
 $('open-recycle').onclick=()=>{$('board-settings').open=false;renderRecycleBin();$('recycle-bin').showModal();};$('close-recycle').onclick=()=>$('recycle-bin').close();
+
+function applyInterfaceFont(value,save=false){const choice=['pingfang','fangzheng'].includes(value)?value:'default';document.documentElement.dataset.interfaceFont=choice;$('interface-font').value=choice;if(save){try{localStorage.setItem('liubai-interface-font',choice);}catch{toast('字体偏好暂未保存');}}}
+try{applyInterfaceFont(localStorage.getItem('liubai-interface-font'));}catch{applyInterfaceFont('default');}
+$('interface-font').onchange=()=>applyInterfaceFont($('interface-font').value,true);
+window.addEventListener('storage',e=>{if(e.key==='liubai-interface-font')applyInterfaceFont(e.newValue);});
